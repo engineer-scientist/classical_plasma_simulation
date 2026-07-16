@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classical Plasma Simulation</title>
+<style>
+  :root {
+    --bg:#0b1020; --panel:#141a2e; --panel2:#1b2340; --ink:#e8ecf7;
+    --muted:#93a0c0; --line:#2a3355; --accent:#5b8cff; --accent2:#38d0c4;
+    --ok:#42d17a; --warn:#ffb454; --err:#ff6b6b;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(180deg,#0b1020,#0e1428 60%,#0b1020);
+    color:var(--ink); font:15px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  header { padding:22px 24px 8px; }
+  h1 { margin:0; font-size:22px; letter-spacing:.2px; }
+  h1 .spark { color:var(--accent2); }
+  .sub { color:var(--muted); margin-top:4px; font-size:13px; }
+  .wrap { display:grid; grid-template-columns:minmax(340px,420px) 1fr; gap:20px;
+          padding:16px 24px 40px; align-items:start; }
+  @media (max-width:900px){ .wrap{ grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+          padding:18px; }
+  .card h2 { margin:0 0 12px; font-size:14px; text-transform:uppercase;
+             letter-spacing:.08em; color:var(--muted); }
+  fieldset { border:1px solid var(--line); border-radius:10px; margin:0 0 14px;
+             padding:12px 12px 4px; background:var(--panel2); }
+  legend { padding:0 6px; color:var(--accent2); font-size:12px;
+           text-transform:uppercase; letter-spacing:.08em; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+  .grid.three { grid-template-columns:1fr 1fr 1fr; }
+  label { display:flex; flex-direction:column; gap:4px; font-size:12px;
+          color:var(--muted); }
+  input {
+    background:#0c1224; color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:8px 9px; font-size:14px; width:100%;
+    font-variant-numeric:tabular-nums;
+  }
+  input:focus { outline:none; border-color:var(--accent); }
+  .presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .presets button {
+    background:var(--panel2); color:var(--ink); border:1px solid var(--line);
+    border-radius:20px; padding:6px 12px; font-size:12px; cursor:pointer;
+  }
+  .presets button:hover { border-color:var(--accent2); color:var(--accent2); }
+  .actions { display:flex; gap:10px; align-items:center; margin-top:4px; }
+  .run {
+    background:linear-gradient(90deg,var(--accent),#7a6bff); color:#fff;
+    border:none; border-radius:10px; padding:11px 20px; font-size:15px;
+    font-weight:600; cursor:pointer;
+  }
+  .run:disabled { opacity:.5; cursor:not-allowed; }
+  .reset { background:transparent; color:var(--muted); border:1px solid var(--line);
+           border-radius:10px; padding:11px 14px; cursor:pointer; }
+  .status { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); }
+  .dot.run { background:var(--accent); animation:pulse 1s infinite; }
+  .dot.ok { background:var(--ok); } .dot.err { background:var(--err); }
+  @keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  .state-label { font-weight:600; text-transform:capitalize; }
+  .msg { color:var(--muted); font-size:13px; }
+  .banner { border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px; }
+  .banner.err { background:rgba(255,107,107,.12); border:1px solid var(--err); color:#ffd0d0; }
+  .banner.warn { background:rgba(255,180,84,.12); border:1px solid var(--warn); color:#ffe3bd; }
+  pre.log {
+    background:#080d1c; border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-size:12px; color:#aeb9d8; max-height:180px;
+    overflow:auto; white-space:pre-wrap; margin:0 0 14px;
+  }
+  .imgbox { border:1px solid var(--line); border-radius:12px; overflow:hidden;
+            background:#080d1c; margin-bottom:16px; }
+  .imgbox img { display:block; width:100%; height:auto; }
+  .imgcap { display:flex; justify-content:space-between; align-items:center;
+            padding:8px 12px; font-size:12px; color:var(--muted);
+            border-top:1px solid var(--line); }
+  .imgcap a { color:var(--accent2); text-decoration:none; }
+  table.meta { width:100%; border-collapse:collapse; font-size:13px; }
+  table.meta td { padding:5px 8px; border-bottom:1px solid var(--line); }
+  table.meta td:first-child { color:var(--muted); width:45%; }
+  .placeholder { color:var(--muted); font-size:13px; text-align:center;
+                 padding:50px 20px; }
+  .hint { color:var(--muted); font-size:11px; margin-top:2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="spark">⚡</span> Classical Plasma Simulation</h1>
+  <div class="sub">N electrons + N protons under mutual Coulomb forces and uniform
+    external <b>E</b>/<b>B</b> fields. Set parameters, run, and watch the animation
+    &amp; diagnostics.</div>
+</header>
+
+<div class="wrap">
+  <!-- ------------------------- Parameter form ------------------------- -->
+  <form class="card" id="form" autocomplete="off">
+    <h2>Parameters</h2>
+
+    <div class="presets">
+      <span style="color:var(--muted);font-size:12px;align-self:center">Presets:</span>
+      <button type="button" data-preset="exb">E × B drift</button>
+      <button type="button" data-preset="gyration">Pure B gyration</button>
+      <button type="button" data-preset="efield">E-field acceleration</button>
+    </div>
+
+    <fieldset>
+      <legend>Simulation</legend>
+      <div class="grid">
+        <label>Particles / species (N)<input name="N" type="number" min="1" max="3000" step="1"></label>
+        <label>Steps<input name="nsteps" type="number" min="1" max="20000" step="1"></label>
+        <label>Random seed<input name="seed" type="number" min="0" step="1"></label>
+        <label>Threads<input name="nthreads" type="number" min="1" step="1"></label>
+      </div>
+      <div class="hint">Total particles = 2N. Cost grows as N² × steps.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Box size — metres</legend>
+      <div class="grid three">
+        <label>Lx<input name="Lx" type="number" step="any"></label>
+        <label>Ly<input name="Ly" type="number" step="any"></label>
+        <label>Lz<input name="Lz" type="number" step="any"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Dynamics</legend>
+      <div class="grid">
+        <label>Time step dt (s)<input name="dt" type="number" step="any"></label>
+        <label>Temperature (K)<input name="temp" type="number" step="any"></label>
+        <label>Softening ε (m)<input name="soft" type="number" step="any"></label>
+        <label>Save stride<input name="stride" type="number" min="1" step="1"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Magnetic field B — tesla</legend>
+      <div class="grid three">
+        <label>Bx<input name="Bx" type="number" step="any"></label>
+        <label>By<input name="By" type="number" step="any"></label>
+        <label>Bz<input name="Bz" type="number" step="any"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Electric field E — V/m</legend>
+      <div class="grid three">
+        <label>Ex<input name="Ex" type="number" step="any"></label>
+        <label>Ey<input name="Ey" type="number" step="any"></label>
+        <label>Ez<input name="Ez" type="number" step="any"></label>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button class="run" id="runBtn" type="submit">Run simulation</button>
+      <button class="reset" id="resetBtn" type="button">Reset defaults</button>
+    </div>
+  </form>
+
+  <!-- ---------------------------- Results ----------------------------- -->
+  <div class="card" id="results">
+    <h2>Results</h2>
+    <div id="banner"></div>
+    <div class="status" id="statusRow" style="display:none">
+      <span class="dot" id="dot"></span>
+      <span class="state-label" id="stateLabel">—</span>
+      <span class="msg" id="stateMsg"></span>
+    </div>
+    <pre class="log" id="log" style="display:none"></pre>
+    <div id="output">
+      <div class="placeholder">Set your parameters and click
+        <b>Run simulation</b>. The animation and diagnostic plots will appear here.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {
+  N:500, nsteps:2000, seed:12345, nthreads:8,
+  Lx:1e-3, Ly:1e-3, Lz:1e-3, dt:1e-12, temp:1e4, soft:1e-6, stride:10,
+  Bx:0, By:0, Bz:1, Ex:1000, Ey:0, Ez:0
+};
+const PRESETS = {
+  exb:      { Bx:0, By:0, Bz:1,  Ex:500, Ey:0, Ez:0 },   // E ⟂ B → charge-independent drift
+  gyration: { Bx:0, By:0, Bz:1,  Ex:0,   Ey:0, Ez:0 },   // pure magnetic gyration
+  efield:   { Bx:0, By:0, Bz:0,  Ex:1000,Ey:0, Ez:0 }    // straight-line acceleration
+};
+const form = document.getElementById('form');
+const $ = (id) => document.getElementById(id);
+
+function setForm(vals) {
+  for (const [k, v] of Object.entries(vals)) {
+    if (form.elements[k]) form.elements[k].value = v;
+  }
+}
+function applyPreset(vals) {   // only overwrite the keys the preset defines
+  for (const [k, v] of Object.entries(vals)) {
+    if (form.elements[k]) form.elements[k].value = v;
+  }
+}
+setForm(DEFAULTS);
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => applyPreset(PRESETS[btn.dataset.preset]));
+});
+$('resetBtn').addEventListener('click', () => setForm(DEFAULTS));
+
+let polling = null;
+
+function collect() {
+  const p = {};
+  for (const el of form.elements) {
+    if (el.name) p[el.name] = Number(el.value);
+  }
+  return p;
+}
+
+function setStatus(state, msg) {
+  $('statusRow').style.display = 'flex';
+  $('stateLabel').textContent = state;
+  $('stateMsg').textContent = msg || '';
+  const dot = $('dot');
+  dot.className = 'dot';
+  if (state === 'done') dot.classList.add('ok');
+  else if (state === 'error') dot.classList.add('err');
+  else dot.classList.add('run');
+}
+
+function showBanner(kind, text) {
+  $('banner').innerHTML = text ? `<div class="banner ${kind}">${text}</div>` : '';
+}
+
+function fmt(x) {                       // compact number formatting for the meta table
+  const n = Number(x);
+  if (!isFinite(n)) return x;
+  if (n !== 0 && (Math.abs(n) < 1e-3 || Math.abs(n) >= 1e5)) return n.toExponential(3);
+  return String(n);
+}
+
+const META_ROWS = [
+  ['N','particles / species'], ['NP','total particles'], ['nframes','frames'],
+  ['dt','time step (s)'], ['nsteps','steps'], ['save_stride','save stride'],
+  ['Lx','Lx (m)'], ['Ly','Ly (m)'], ['Lz','Lz (m)'],
+  ['temperature','set temperature (K)'], ['T_kinetic','kinetic T (K)'],
+  ['pressure','mean pressure (Pa)'],
+  ['Bx','Bx (T)'], ['By','By (T)'], ['Bz','Bz (T)'],
+  ['Ex','Ex (V/m)'], ['Ey','Ey (V/m)'], ['Ez','Ez (V/m)']
+];
+
+function renderResults(job) {
+  const meta = job.meta || {};
+  let rows = '';
+  for (const [k, lbl] of META_ROWS) {
+    if (meta[k] !== undefined) rows += `<tr><td>${lbl}</td><td>${fmt(meta[k])}</td></tr>`;
+  }
+  const bust = '?t=' + Date.now();
+  let html = '';
+  html += `<div class="imgbox"><img src="${job.gif_url}${bust}" alt="plasma animation">
+    <div class="imgcap"><span>Animation</span>
+      <a href="${job.gif_url}" download>download .gif</a></div></div>`;
+  if (job.plots_url) {
+    html += `<div class="imgbox"><img src="${job.plots_url}${bust}" alt="diagnostic plots">
+      <div class="imgcap"><span>Diagnostics — energy · temperature · pressure · orbits</span>
+        <a href="${job.plots_url}" download>download .png</a></div></div>`;
+  }
+  if (rows) html += `<table class="meta">${rows}</table>`;
+  $('output').innerHTML = html;
+}
+
+async function poll(jobId) {
+  try {
+    const r = await fetch('/api/status/' + jobId);
+    const job = await r.json();
+    if (job.error) { finishError(job.error); return; }
+    setStatus(job.state, job.message);
+    if (job.log_tail) { $('log').style.display = 'block'; $('log').textContent = job.log_tail; $('log').scrollTop = $('log').scrollHeight; }
+    if (job.state === 'done') {
+      clearInterval(polling); polling = null;
+      renderResults(job);
+      $('runBtn').disabled = false;
+    } else if (job.state === 'error') {
+      clearInterval(polling); polling = null;
+      showBanner('err', job.message || 'The run failed. See the log below.');
+      $('runBtn').disabled = false;
+    }
+  } catch (e) {
+    finishError('Lost connection to the server: ' + e.message);
+  }
+}
+
+function finishError(msg) {
+  if (polling) { clearInterval(polling); polling = null; }
+  setStatus('error', '');
+  showBanner('err', msg);
+  $('runBtn').disabled = false;
+}
+
+form.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  $('runBtn').disabled = true;
+  showBanner('', '');
+  $('output').innerHTML = '<div class="placeholder">Working…</div>';
+  setStatus('queued', 'Submitting…');
+  try {
+    const r = await fetch('/api/run', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(collect())
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) { finishError(data.error || ('HTTP ' + r.status)); return; }
+    if (data.notes && data.notes.length) showBanner('warn', 'Adjusted: ' + data.notes.join('; '));
+    polling = setInterval(() => poll(data.job_id), 1000);
+    poll(data.job_id);
+  } catch (e) {
+    finishError('Could not reach the server: ' + e.message);
+  }
+});
+</script>
+</body>
+</html>
