@@ -1,5 +1,5 @@
 /* ============================================================================
- *  plasma_sim_parallel.c  --  Classical plasma simulation, OpenMP PARALLEL
+ *  plasma_sim_openmp.c  --  Classical plasma simulation, OpenMP PARALLEL
  * ============================================================================
  *
  *  A box of dimensions Lx x Ly x Lz contains N electrons and N protons
@@ -65,7 +65,7 @@
  *    plasma_energy.csv  - step, time, KE, PE, total energy (for a stability check)
  *
  *  Build:  make parallel         (adds -fopenmp; see Makefile)
- *  Run:    ./plasma_sim_parallel [N] [nsteps] [seed] [nthreads]
+ *  Run:    ./plasma_sim_openmp [N] [nsteps] [seed] [nthreads]
  *          (all four are optional; nthreads defaults to OMP_NUM_THREADS or the
  *           number of cores.  All fall back to the defaults below.)
  *

@@ -23,7 +23,7 @@ output into an animation.
 | File                    | Purpose                                                              |
 |-------------------------|---------------------------------------------------------------------|
 | `plasma_sim_serial.c`   | The serial simulator (physics + integrator + output + timing).      |
-| `plasma_sim_parallel.c` | The OpenMP simulator — same physics, parallel `compute_forces`.      |
+| `plasma_sim_openmp.c`   | The OpenMP simulator — same physics, parallel `compute_forces`.      |
 | `Makefile`              | Build either/both; helpers `run`, `run-par`, `anim`, `scaling`, `clean`. |
 | `run_scaling.sh`        | Sweeps core counts for the strong- and weak-scaling studies.        |
 | `plot_scaling.py`       | Turns `plasma_scaling.csv` into the scaling figures.                |
@@ -76,7 +76,7 @@ python3 visualize.py output/plasma_meta_N500_..._Bz1.0.txt
 ## Quick start
 
 ```bash
-make                    # builds BOTH ./plasma_sim_serial and ./plasma_sim_parallel
+make                    # builds BOTH ./plasma_sim_serial and ./plasma_sim_openmp
 ./plasma_sim_serial     # runs with the default parameters, writes the data files
 python3 visualize.py    # renders plasma_animation_<suffix>.gif  (~20 s)
 ```
@@ -91,8 +91,8 @@ Run the parallel version on all cores (or a chosen number):
 
 ```bash
 make parallel
-./plasma_sim_parallel                       # uses OMP_NUM_THREADS, else all cores
-OMP_NUM_THREADS=8 ./plasma_sim_parallel     # 8 threads
+./plasma_sim_openmp                         # uses OMP_NUM_THREADS, else all cores
+OMP_NUM_THREADS=8 ./plasma_sim_openmp       # 8 threads
 ```
 
 Both binaries take the same optional positional parameters; the parallel one
@@ -100,7 +100,7 @@ takes an extra `nthreads` (which overrides `OMP_NUM_THREADS`):
 
 ```bash
 ./plasma_sim_serial   800 3000 42        # N, nsteps, seed
-./plasma_sim_parallel 800 3000 42 8      # N, nsteps, seed, nthreads
+./plasma_sim_openmp   800 3000 42 8      # N, nsteps, seed, nthreads
 ```
 
 Every run prints its execution time and appends a timing row to
@@ -117,7 +117,7 @@ diagnostic plots — no editing constants, no command line.
 ### 1. Start the server
 
 ```bash
-make web                 # builds plasma_sim_parallel if needed, serves on :8000
+make web                 # builds plasma_sim_openmp if needed, serves on :8000
 make web PORT=9000       # choose another port
 # or directly:
 python3 webapp/server.py --port 8000 [--host 0.0.0.0]
@@ -202,7 +202,7 @@ without recompiling, and it is handy from the shell too:
 
 ```bash
 PLASMA_TEMP=1e5 PLASMA_BZ=2 PLASMA_EX=500 PLASMA_LX=2e-3 \
-  ./plasma_sim_parallel 500 2000 42 8
+  ./plasma_sim_openmp 500 2000 42 8
 ```
 
 | Variable | Sets | Variable | Sets |
@@ -317,7 +317,7 @@ Recommended: do the compute-heavy run on a **compute node**, not a login node
 ssh <compute-node>
 cd classical_plasma_simulation
 make
-./plasma_sim_parallel        # or ./plasma_sim_serial
+./plasma_sim_openmp          # or ./plasma_sim_serial
 python3 visualize.py
 ```
 
@@ -331,7 +331,7 @@ See **Performance & scaling → Results** below for a measured sweep on such a n
 
 The cost is dominated by the **O(N²) `compute_forces()` double loop**;
 everything else (the per-particle Boris push, wall reflection, energy sums) is
-O(N). `plasma_sim_parallel.c` parallelises all of it with OpenMP:
+O(N). `plasma_sim_openmp.c` parallelises all of it with OpenMP:
 
 - **Force loop — "full-row" scheme.** Each thread owns a block of rows *i* and
   computes the force on *i* by summing over **all** *j ≠ i*, writing only

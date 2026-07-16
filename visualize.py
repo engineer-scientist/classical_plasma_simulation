@@ -51,7 +51,7 @@ from mpl_toolkits.mplot3d import Axes3D    # noqa: F401  (registers 3d proj.)
 KB = 1.380649e-23        # Boltzmann constant [J/K] (matches plasma_sim.c)
 
 # All simulation output lives here (matches plasma_sim_serial.c /
-# plasma_sim_parallel.c); override with PLASMA_OUTDIR to point elsewhere.
+# plasma_sim_openmp.c); override with PLASMA_OUTDIR to point elsewhere.
 OUTDIR = os.environ.get("PLASMA_OUTDIR", "output")
 
 def resolve_names(argv):
@@ -68,7 +68,7 @@ def resolve_names(argv):
         candidates = sorted(glob.glob(os.path.join(OUTDIR, "plasma_meta*.txt")))
         if not candidates:
             sys.exit("ERROR: no plasma_meta*.txt in %s/ -- run "
-                     "./plasma_sim_serial (or ./plasma_sim_parallel) first"
+                     "./plasma_sim_serial (or ./plasma_sim_openmp) first"
                      % OUTDIR)
         if len(candidates) > 1:
             lines = ["ERROR: multiple meta files found -- pass one explicitly:"]

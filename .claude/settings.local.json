@@ -25,16 +25,16 @@
       "Bash(./plasma_sim 30 50)",
       "Bash(rm -f plasma_*_N30_* /tmp/d.txt)",
       "Bash(gcc -O3 -march=native -Wall -Wextra -std=c11 -o plasma_sim_serial plasma_sim_serial.c -lm)",
-      "Bash(gcc -O3 -march=native -Wall -Wextra -std=c11 -fopenmp -o plasma_sim_parallel plasma_sim_parallel.c -lm)",
+      "Bash(gcc -O3 -march=native -Wall -Wextra -std=c11 -fopenmp -o plasma_sim_openmp plasma_sim_openmp.c -lm)",
       "Bash(./plasma_sim_serial 300 1000)",
-      "Bash(OMP_NUM_THREADS=4 ./plasma_sim_parallel 300 1000 12345 4)",
+      "Bash(OMP_NUM_THREADS=4 ./plasma_sim_openmp 300 1000 12345 4)",
       "Bash(lscpu)",
       "Bash(make serial *)",
       "Bash(mkdir -p /tmp/plasma_cal)",
       "Bash(export PLASMA_OUTDIR=/tmp/plasma_cal PLASMA_TIMING_ONLY=1 OMP_PROC_BIND=close OMP_PLACES=cores)",
-      "Bash(OMP_NUM_THREADS=1 ./plasma_sim_parallel 2500 30 12345 1)",
-      "Bash(OMP_NUM_THREADS=24 ./plasma_sim_parallel 2500 30 12345 24)",
-      "Bash(OMP_NUM_THREADS=48 ./plasma_sim_parallel 2500 30 12345 48)",
+      "Bash(OMP_NUM_THREADS=1 ./plasma_sim_openmp 2500 30 12345 1)",
+      "Bash(OMP_NUM_THREADS=24 ./plasma_sim_openmp 2500 30 12345 24)",
+      "Bash(OMP_NUM_THREADS=48 ./plasma_sim_openmp 2500 30 12345 48)",
       "Bash(rm -rf /tmp/plasma_cal)",
       "Bash(cp output/plasma_scaling.csv output/plasma_scaling.csv.bak)",
       "Bash(export THREADS=\"1 2 4 8 12 16 24 32 48\" N_STRONG=3000 STEPS=250 N0_WEAK=1200 SEED=12345)",
@@ -49,7 +49,10 @@
       "Bash(pdfinfo /tmp/readme_test.pdf)",
       "Bash(cp /tmp/readme_test.pdf README.pdf)",
       "Bash(rm -f /tmp/readme_test.pdf /tmp/pandoc_err.log)",
-      "Bash(awk '$6 ~ /^15:/')"
+      "Bash(awk '$6 ~ /^15:/')",
+      "Bash(git mv *)",
+      "Bash(echo \"\\(exit $?\\)\")",
+      "Bash(make parallel *)"
     ]
   }
 }

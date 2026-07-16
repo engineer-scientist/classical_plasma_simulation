@@ -80,7 +80,7 @@ echo "  [serial ] N=${N_STRONG} steps=${STEPS}"
 ./plasma_sim_serial "$N_STRONG" "$STEPS" "$SEED" >/dev/null 2>&1
 for p in $THREAD_LIST; do
     echo "  [par ${p}c] N=${N_STRONG} steps=${STEPS}"
-    OMP_NUM_THREADS="$p" ./plasma_sim_parallel "$N_STRONG" "$STEPS" "$SEED" "$p" \
+    OMP_NUM_THREADS="$p" ./plasma_sim_openmp "$N_STRONG" "$STEPS" "$SEED" "$p" \
         >/dev/null 2>&1
 done
 
@@ -94,7 +94,7 @@ echo "  [serial ] N=${Nser} steps=${STEPS}"
 for p in $THREAD_LIST; do
     Np="$(weak_N "$p")"
     echo "  [par ${p}c] N=${Np} steps=${STEPS}  (work/core held constant)"
-    OMP_NUM_THREADS="$p" ./plasma_sim_parallel "$Np" "$STEPS" "$SEED" "$p" \
+    OMP_NUM_THREADS="$p" ./plasma_sim_openmp "$Np" "$STEPS" "$SEED" "$p" \
         >/dev/null 2>&1
 done
 

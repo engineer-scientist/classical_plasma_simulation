@@ -4,7 +4,7 @@
 # ============================================================================
 #
 #  Reads the timing records written by ./plasma_sim_serial and
-#  ./plasma_sim_parallel (one row per run) from plasma_scaling.csv and produces:
+#  ./plasma_sim_openmp (one row per run) from plasma_scaling.csv and produces:
 #
 #    scaling_strong.png  -- speedup and parallel efficiency vs core count, for
 #                           each fixed problem size (strong scaling).

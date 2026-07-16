@@ -7,7 +7,7 @@
 #  drive the existing C simulator + visualize.py from a browser form:
 #
 #      Browser form  ->  POST /api/run   (validated + clamped, then queued)
-#                    ->  background worker runs ./plasma_sim_parallel and
+#                    ->  background worker runs ./plasma_sim_openmp and
 #                        python3 visualize.py in an isolated per-job directory
 #                    ->  GET /api/status/<id>  (polled ~1 Hz for live progress)
 #                    ->  GET /api/file/<id>/gif|plots  (the animation + plots)
@@ -42,8 +42,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 WEBAPP_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR   = os.path.dirname(WEBAPP_DIR)                 # the project directory
 INDEX_HTML = os.path.join(WEBAPP_DIR, "index.html")
-BINARY     = os.path.join(ROOT_DIR, "plasma_sim_parallel")
-BINARY_SRC = os.path.join(ROOT_DIR, "plasma_sim_parallel.c")
+BINARY     = os.path.join(ROOT_DIR, "plasma_sim_openmp")
+BINARY_SRC = os.path.join(ROOT_DIR, "plasma_sim_openmp.c")
 JOBS_DIR   = os.path.join(ROOT_DIR, "output", "web_jobs")
 
 NCPU        = os.cpu_count() or 4
@@ -179,7 +179,7 @@ def append_log(job, text):
 
 
 def ensure_binary(job):
-    """Build ./plasma_sim_parallel if missing or older than its source."""
+    """Build ./plasma_sim_openmp if missing or older than its source."""
     fresh = (os.path.exists(BINARY) and os.path.exists(BINARY_SRC)
              and os.path.getmtime(BINARY) >= os.path.getmtime(BINARY_SRC))
     if fresh:
